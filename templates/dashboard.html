@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Narrative Detector</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --orange: #d18616;
+            --red: #f85149;
+            --purple: #bc8cff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            padding: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        header h1 { font-size: 1.5rem; color: var(--accent); }
+        header p { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+        }
+        .stat-card .label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+        .stat-card .value { font-size: 1.4rem; font-weight: 600; margin-top: 0.2rem; }
+        .methodology {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .methodology h3 { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--accent); }
+        .methodology p, .methodology li { font-size: 0.8rem; color: var(--text-muted); }
+        .methodology ul { padding-left: 1.2rem; }
+        .narratives { display: flex; flex-direction: column; gap: 1rem; }
+        .narrative-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .narrative-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+        .narrative-header:hover { background: rgba(88,166,255,0.04); }
+        .narrative-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .narrative-title h3 { font-size: 1rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge.very_strong { background: var(--green); color: #000; }
+        .badge.strong { background: var(--yellow); color: #000; }
+        .badge.moderate { background: var(--orange); color: #000; }
+        .badge.emerging { background: var(--purple); color: #000; }
+        .badge.quiet { background: var(--border); color: var(--text-muted); }
+        .score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 60px;
+            text-align: right;
+        }
+        .narrative-body { padding: 1rem; display: none; }
+        .narrative-body.open { display: block; }
+        .narrative-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+        .signals-list {
+            list-style: none;
+            margin-bottom: 1rem;
+        }
+        .signals-list li {
+            padding: 0.3rem 0;
+            font-size: 0.8rem;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .signals-list li:last-child { border-bottom: none; }
+        .signals-list li::before {
+            content: ">";
+            margin-right: 0.5rem;
+            color: var(--accent);
+        }
+        .ideas-section { margin-top: 1rem; }
+        .ideas-section h4 { font-size: 0.85rem; color: var(--green); margin-bottom: 0.5rem; }
+        .idea-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .idea-card h5 { font-size: 0.85rem; color: var(--accent); }
+        .idea-card p { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+        .section-title {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+        .api-section { margin-top: 1.5rem; }
+        .api-section code {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Solana Narrative Detector</h1>
+        <p>Automated detection of emerging narratives in the Solana ecosystem.
+           Data from on-chain activity, GitHub repos, market signals, and news feeds.
+           {% if analysis and analysis.analyzed_at %}
+           Last updated: {{ analysis.analyzed_at[:19] }}Z
+           {% endif %}
+        </p>
+    </header>
+
+    {% if analysis and analysis.summary %}
+    <div class="stats">
+        <div class="stat-card">
+            <div class="label">Narratives Detected</div>
+            <div class="value">{{ analysis.summary.total_narratives_detected }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Active (Strong+)</div>
+            <div class="value" style="color: var(--green)">{{ analysis.summary.active_narratives }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Total Signals</div>
+            <div class="value">{{ analysis.summary.total_signals }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">SOL Price</div>
+            <div class="value">${{ "%.2f"|format(analysis.summary.sol_price) }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">SOL 24h Change</div>
+            <div class="value" style="color: {% if analysis.summary.sol_24h_change >= 0 %}var(--green){% else %}var(--red){% endif %}">
+                {{ "%.1f"|format(analysis.summary.sol_24h_change) }}%
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Solana Coins Trending</div>
+            <div class="value">{{ analysis.summary.solana_trending_count }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <h2 class="section-title">Detected Narratives</h2>
+    <div class="narratives">
+        {% if analysis and analysis.narratives %}
+        {% for narrative in analysis.narratives %}
+        <div class="narrative-card">
+            <div class="narrative-header" onclick="toggleNarrative(this)">
+                <div class="narrative-title">
+                    <span class="badge {{ narrative.strength }}">{{ narrative.strength }}</span>
+                    <h3>{{ narrative.label }}</h3>
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">({{ narrative.signal_count }} signals)</span>
+                </div>
+                <div class="score">{{ narrative.score }}</div>
+            </div>
+            <div class="narrative-body">
+                <p class="narrative-desc">{{ narrative.description }}</p>
+
+                {% if narrative.signals %}
+                <h4 style="font-size: 0.85rem; margin-bottom: 0.4rem;">Signals</h4>
+                <ul class="signals-list">
+                    {% for signal in narrative.signals %}
+                    <li>{{ signal }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if narrative.product_ideas %}
+                <div class="ideas-section">
+                    <h4>Product Ideas ({{ narrative.product_ideas|length }})</h4>
+                    {% for idea in narrative.product_ideas %}
+                    <div class="idea-card">
+                        <h5>{{ idea.title }}</h5>
+                        <p>{{ idea.description }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="color: var(--text-muted);">No analysis data available yet. Data collection runs on startup.</p>
+        {% endif %}
+    </div>
+
+    {% if analysis and analysis.methodology %}
+    <div class="methodology" style="margin-top: 1.5rem;">
+        <h3>Methodology</h3>
+        <p><strong>Data Sources:</strong></p>
+        <ul>
+            {% for source in analysis.methodology.data_sources %}
+            <li>{{ source }}</li>
+            {% endfor %}
+        </ul>
+        <p style="margin-top: 0.5rem;"><strong>Signal Detection:</strong> {{ analysis.methodology.signal_detection }}</p>
+        <p><strong>Ranking:</strong> {{ analysis.methodology.ranking }}</p>
+        <p><strong>Update Frequency:</strong> {{ analysis.methodology.update_frequency }}</p>
+    </div>
+    {% endif %}
+
+    <div class="api-section">
+        <h2 class="section-title">API Endpoints</h2>
+        <div style="display: grid; gap: 0.5rem;">
+            <div><code>GET /api/narratives</code> — All narratives with scores and signals</div>
+            <div><code>GET /api/narratives/{id}</code> — Specific narrative details</div>
+            <div><code>GET /api/ideas</code> — All product ideas across narratives</div>
+            <div><code>GET /api/history</code> — Collection history over time</div>
+            <div><code>POST /api/collect</code> — Trigger manual data collection</div>
+            <div><code>GET /health</code> — Health check</div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Built by <a href="https://github.com/TheAuroraAI">Aurora</a> — an autonomous AI agent.
+           Source: <a href="https://github.com/TheAuroraAI/solana-narrative-detector">GitHub</a></p>
+        <p>Data refreshes every 2 hours. Narratives scored from on-chain, GitHub, market, and news signals.</p>
+    </footer>
+
+    <script>
+        function toggleNarrative(header) {
+            const body = header.nextElementSibling;
+            body.classList.toggle('open');
+        }
+        // Auto-open first narrative
+        document.addEventListener('DOMContentLoaded', () => {
+            const first = document.querySelector('.narrative-body');
+            if (first) first.classList.add('open');
+        });
+    </script>
+</body>
+</html>
